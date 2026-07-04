@@ -1,52 +1,109 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
-from locators import NavigationLocators, Autorization, Input
+
+from locators import NavigationLocators, Autorization, Input, Advert, ProfilePage
 
 
-def test_login(driver, create_user):
-    expected_result_username = "User."
-    user_data = create_user
+def test_create_advert_auth_user(driver, create_user):
+    user = create_user
+    advert_name = "name"
 
-    # кнопка "Вход/регистрация"
+    wait = WebDriverWait(driver, 5)
+
+    # Авторизация
     driver.find_element(*NavigationLocators.LOGIN_REG_BUTTON).click()
 
-    # ожидание пока появится поле email
-    WebDriverWait(driver, 3).until(
-        expected_conditions.visibility_of_element_located(Input.INPUT_EMAIL)
-    )
+    wait.until(
+        EC.visibility_of_element_located(Input.INPUT_EMAIL)
+    ).send_keys(user["email"])
 
-    # ожидание пока появится поле password
-    WebDriverWait(driver, 3).until(
-        expected_conditions.visibility_of_element_located(
-            Input.INPUT_PASSWORD
+    driver.find_element(
+        *Input.INPUT_PASSWORD
+    ).send_keys(user["password"])
+
+    driver.find_element(
+        *Autorization.LOGIN_BUTTON
+    ).click()
+
+    wait.until(
+        EC.visibility_of_element_located(
+            NavigationLocators.PROFIL_BUTTON
         )
     )
 
-    # ввод эмейла и пароля
-    driver.find_element(*Input.INPUT_EMAIL).send_keys(user_data["email"])
-    driver.find_element(*Input.INPUT_PASSWORD).send_keys(user_data["password"])
+    # Создание объявления
+    wait.until(
+        EC.element_to_be_clickable(
+            NavigationLocators.CREATE_ADVERT
+        )
+    ).click()
 
-    driver.find_element(*Autorization.LOGIN_BUTTON).click()
+    wait.until(
+        EC.visibility_of_element_located(
+            Advert.INPUT_NAME
+        )
+    ).send_keys(advert_name)
 
-    # ожидаем прогрузки страницы профиля
-    WebDriverWait(driver, 5).until(
-        expected_conditions.visibility_of_element_located(
-            (By.XPATH, "//h3[@class='profileText name']")
+    # Описание (как было в рабочем варианте)
+    wait.until(EC.presence_of_element_located(Advert.INPUT_DESCRIPTION))
+    driver.find_element(*Advert.INPUT_DESCRIPTION).send_keys("description")
+    driver.find_element(*Advert.INPUT_PRICE).send_keys("123")
+    
+
+
+    wait.until(
+        EC.visibility_of_element_located(
+            Advert.DROPDOWN_CITY_BUTTON
+        )
+    ).click()
+
+    
+
+    wait.until(
+        EC.element_to_be_clickable(
+            Advert.DROPDOWN_CITY_SELECT
+        )
+    ).click()
+
+    
+    wait.until(
+        EC.element_to_be_clickable(
+            Advert.DROPDOWN_CATEGORY_BUTTON
+        )
+    ).click()
+    
+
+    wait.until(
+        EC.element_to_be_clickable(
+            Advert.DROPDOWN_CATEGORY_SELECT
+        )
+    ).click()
+
+    driver.find_element(
+        *Advert.RADIO_USED
+    ).click()
+
+    driver.find_element(
+        *Advert.PUBLISH_BUTTON
+    ).click()
+
+    wait.until(
+        EC.element_to_be_clickable(
+            NavigationLocators.PROFIL_BUTTON
+        )
+    ).click()
+
+    wait.until(
+        EC.visibility_of_element_located(
+            ProfilePage.MY_ADVERTS
         )
     )
 
-    # сравниваем ОР и ФР
-    actual_result_username = driver.find_element(
-        By.XPATH, "//h3[@class='profileText name']"
-    ).text
-    assert actual_result_username == expected_result_username
-
-    avatar_content = driver.find_element(
-        By.CSS_SELECTOR, "div.flexRow button svg"
-    )
-
-    # Проверяем, что иконка отображается на экране
-    assert (
-        avatar_content.is_displayed()
-    ), "Дефолтный аватар (тег <svg>) не отображается!"
+# Ждем, пока загрузятся и станут видимыми имена объявлений
+    adverts = wait.until(EC.visibility_of_any_elements_located(ProfilePage.ALL_ADVERTS_NAMES))
+    
+    # Собираем текст из найденных элементов
+    advert_names = [advert.text for advert in adverts]
+    
+    # Проверяем наличие нашего объявления
+    assert advert_name in advert_names

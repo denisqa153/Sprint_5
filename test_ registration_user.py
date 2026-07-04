@@ -40,7 +40,7 @@ def test_successful_registration(driver):
 ).click()
 #ожидаем прогрузки страницы
   WebDriverWait(driver, 5).until(
-    expected_conditions.visibility_of_element_located((By.XPATH, "//h3[@class='profileText name']"))
+    expected_conditions.visibility_of_element_located(NavigationLocators.PROFIL_BUTTON)
 )
 #сравниваем ОР и ФР
   actual_result_username = driver.find_element(By.XPATH, "//h3[contains(@class, 'profileText')]").text
