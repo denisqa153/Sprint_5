@@ -18,7 +18,6 @@ def driver():
     browser.quit()
 
 
-
 @pytest.fixture
 def create_user(driver):
     random_number = random.randint(100, 999999)
@@ -27,26 +26,35 @@ def create_user(driver):
     new_email = f"user{random_number}@{random.choice(domains)}"
     password = "123456"
 
-    # Регистрация
-    driver.find_element(*NavigationLocators.LOGIN_REG_BUTTON).click()
+    # Открыть окно входа
+    WebDriverWait(driver, 10).until(
+        expected_conditions.element_to_be_clickable(
+            NavigationLocators.LOGIN_REG_BUTTON
+        )
+    ).click()
 
-    WebDriverWait(driver, 5).until(
+    # Перейти к регистрации
+    WebDriverWait(driver, 10).until(
         expected_conditions.element_to_be_clickable(
             Autorization.NOT_ACCOUNT_BUTTON
         )
     ).click()
 
-    WebDriverWait(driver, 5).until(
-        expected_conditions.visibility_of_element_located(
-            Input.INPUT_EMAIL
-        )
-    ).send_keys(new_email)
+    # Ждем появления всех полей
+    WebDriverWait(driver, 10).until(
+        expected_conditions.visibility_of_element_located(Input.INPUT_SECOND_PASSWORD)
+    )
 
+    # Заполняем форму
+    driver.find_element(*Input.INPUT_EMAIL).send_keys(new_email)
     driver.find_element(*Input.INPUT_PASSWORD).send_keys(password)
     driver.find_element(*Input.INPUT_SECOND_PASSWORD).send_keys(password)
 
-    driver.find_element(
-        *Registration.CREATE_ACCOUNT_BUTTON
+    # Создать аккаунт
+    WebDriverWait(driver, 10).until(
+        expected_conditions.element_to_be_clickable(
+            Registration.CREATE_ACCOUNT_BUTTON
+        )
     ).click()
 
     # Ждем профиль
@@ -56,13 +64,14 @@ def create_user(driver):
         )
     )
 
-    # Выходим
-    driver.find_element(
-        By.XPATH,
-        "//button[text()='Выйти']"
+    # Выйти
+    WebDriverWait(driver, 10).until(
+        expected_conditions.element_to_be_clickable(
+            (By.XPATH, "//button[text()='Выйти']")
+        )
     ).click()
 
-    # Ждем, что снова появилась кнопка входа
+    # Ждем кнопку входа
     WebDriverWait(driver, 10).until(
         expected_conditions.element_to_be_clickable(
             NavigationLocators.LOGIN_REG_BUTTON
